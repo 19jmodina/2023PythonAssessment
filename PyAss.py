@@ -1,5 +1,6 @@
 from tkinter import *
 from tkinter import messagebox
+import math
 
 class ordering_items:
     """Order Items Object"""
@@ -8,8 +9,11 @@ class ordering_items:
         self.price = price
         self.type = type
         self.quantity = quantity
-    def price_calc(self):
-        return self.price * self.quantity
+    def price_calc(self):  #Note try to do the calculation over here
+        for i in self.current_orders:
+            if i.quantity > 0:
+                self.total_price += i.price * i.quantity
+        return self.total_price
     
 class customer:
     """Customer Object"""
@@ -21,7 +25,8 @@ class ordering_gui:
     """Main GUI class"""
     def __init__(self, parent):
         # Initialise the title frame
-        
+        self.dictionary_test = {}
+        self.count = 0
         self.ordering_items_list = [ordering_items('A', 1.00, 'main'), ordering_items('B', 2.00, 'main'), ordering_items('C', 3.00, 'main')]
         addon_list = [ordering_items('None', 0, 'addon'), ordering_items('Addon A', 0.5, 'addon'), ordering_items('Addon B', 0.75, 'addon'), ordering_items('Addon C', 1.00, 'addon')]
         self.customer_list = []
@@ -48,22 +53,26 @@ class ordering_gui:
         self.thanks_label.grid(padx=100, pady=100)
         
         self.main_frame = Frame(parent)
+        self.order_wrapper = Frame(self.main_frame)
+        self.order_elements = Frame(self.order_wrapper)
         self.main_label1 = Label(self.main_frame, text="Hello customer_name")
         main_label2 = Label(self.main_frame, text="Your orders:")
-        self.quantity_entry = Entry(self.main_frame, width=2)
+        self.quantity_entry = Entry(self.order_elements, width=2)
         
-        order_item_names = []
-        addon_item_names = []
-        for i in range(len(self.ordering_items_list)):order_item_names.append(self.ordering_items_list[i].name)
-        for i in range(len(addon_list)):addon_item_names.append(addon_list[i].name)
+        self.order_item_names = []
+        self.addon_item_names = []
+        for i in range(len(self.ordering_items_list)):self.order_item_names.append(self.ordering_items_list[i].name)
+        for i in range(len(addon_list)):self.addon_item_names.append(addon_list[i].name)
         
-
-        order_drop = OptionMenu(self.main_frame, self.order_var, *order_item_names)    
-        addon_drop = OptionMenu(self.main_frame, self.addon_var, *addon_item_names)
+        order_drop = OptionMenu(self.order_elements, self.order_var, *self.order_item_names)    
+        addon_drop = OptionMenu(self.order_elements, self.addon_var, *self.addon_item_names)
        
         main_button = Button(self.main_frame, text="Proceed To Checkout", command= lambda: self.button_handler(2))
+        create_widgets_button = Button(self.main_frame, text="Create Widgets", command= lambda: self.button_handler(4))
 
-
+        create_widgets_button.grid()
+        self.order_wrapper.grid()
+        self.order_elements.grid()
         self.main_label1.grid()
         main_label2.grid()
         self.quantity_entry.grid()
@@ -110,20 +119,55 @@ class ordering_gui:
                     if str(self.order_var.get()) == self.ordering_items_list[i].name:
                         self.current_orders.append(self.ordering_items_list[i])
                         self.ordering_items_list[i].quantity += int(self.quantity_entry.get())
+                    elif str(self.dictionary_test[f"self.order_var{self.count}"]) == self.ordering_items_list[i].name:
+                        self.current_orders.append(self.ordering_items_list[i])
+                        self.ordering_items_list[i].quantity += int(self.quantity_entry.get())
+                pricesum = 0
+                quantitysum = 0
                 for i in range(len(self.current_orders)):
+                    pricesum += self.current_orders[i].price
+                    quantitysum += self.current_orders[i].quantity
                     self.checkout1_price_label.configure(text=f'${self.current_orders[i].price}')
-                    self.checkout1_quantity_label.configure(text=self.current_orders[i].quantity)
+                    self.checkout1_quantity_label.configure(text=f'${self.current_orders[i].quantity}')
                     self.checkout1_orders_label.configure(text=self.current_orders[i].name)
                     self.checkout1_addons_label.configure(text=self.addon_var.get())
-                    self.checkout1_total_label.configure(text=f'${self.current_orders[i].price * self.current_orders[i].quantity}')
+                    self.checkout1_total_label.configure(text=f'${pricesum * quantitysum}')
                 
                 self.main_frame.grid_forget()
                 self.checkout1_frame.grid()
-            case 3: 
+            case 3:
+                self.current_orders = [] 
+                pricesum = 0
+                quantitysum = 0
+                for i in range(len(self.ordering_items_list)):
+                    if self.ordering_items_list[i].quantity > 0:
+                        self.ordering_items_list[i].quantity = 0
                 self.checkout1_frame.grid_forget()
                 self.main_frame.grid()
             case 4:
-                pass
+                """Create widgets"""
+                frames = []
+                widgets = []
+                self.dictionary_test = {}
+                self.count += 1
+                self.dictionary_test[f"self.order_var{self.count}"] = StringVar()
+                self.dictionary_test[f"self.addon_var{self.count}"] = StringVar()
+                self.dictionary_test[f"quantity_entry{self.count}"] = IntVar()
+                frame = Frame(self.order_wrapper)
+                frames.append(frame)
+                quantity_entry = Entry(frame, textvariable=self.dictionary_test[f"quantity_entry{self.count}"], width=2)
+                order_drop = OptionMenu(frame, self.dictionary_test[f"self.order_var{self.count}"], *self.order_item_names)   
+                addon_drop = OptionMenu(frame, self.dictionary_test[f"self.addon_var{self.count}"], *self.addon_item_names)
+                widgets.append(quantity_entry)
+                widgets.append(order_drop)
+                widgets.append(addon_drop)
+                frames[-1].grid()
+                widgets[-1].grid()
+                widgets[-2].grid()
+                widgets[-3].grid()
+                
+                frame.grid()
+
 
 """Main Routine"""
 if __name__ == "__main__":
